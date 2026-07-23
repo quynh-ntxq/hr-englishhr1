@@ -206,6 +206,17 @@
     border-color: var(--accent);
     color:#fff;
   }
+  .chip.stage-chip.selected{
+    background: var(--accent);
+    border-color: var(--accent);
+    color:#fff;
+  }
+  .stage-desc{
+    font-size:0.78em;
+    color:var(--muted);
+    font-style:italic;
+    margin: 6px 2px 0;
+  }
 
   /* QUESTION AREA */
   .stage{
@@ -359,7 +370,7 @@
     <div class="card">
       <button class="settings-toggle" id="settingsToggle" title="Cài đặt giọng đọc"><i class="fa-solid fa-gear"></i></button>
       <div class="brand"><span class="logo-dot"></span><h1>C&amp;B ENGLISH COACH</h1></div>
-      <p class="subtitle">Luyện tiếng Anh HR - Payroll - C&amp;B mỗi ngày, Stage 1: Survival English at Work</p>
+      <p class="subtitle">Luyện tiếng Anh HR - Payroll - C&amp;B mỗi ngày, đủ 5 Stage từ cơ bản đến phản xạ tự nhiên</p>
 
       <div class="settings-panel" id="settingsPanel">
         <div class="settings-row">
@@ -378,6 +389,12 @@
             <button class="speed-btn" data-speed="1.3">Nhanh</button>
           </div>
         </div>
+      </div>
+
+      <div class="topics-wrap">
+        <span class="topics-label">Chọn Stage</span>
+        <div class="topic-chips" id="stageChips"></div>
+        <div class="stage-desc" id="stageDesc"></div>
       </div>
 
       <div class="topics-wrap">
@@ -419,8 +436,17 @@
   let currentIndex = -1;
   let selectedTopics = new Set();
   let allSelected = true;
+  let currentStage = 1;
 
-  const possibleFiles = ['CB_Payroll_English.xlsx', 'data.xlsx'];
+  const STAGE_TITLES = {
+    1: 'Survival English at Work',
+    2: 'HR & Payroll English',
+    3: 'Professional Communication',
+    4: 'Meeting English',
+    5: 'Think and Respond in English'
+  };
+
+  const possibleFiles = ['CB_Payroll_English_Full.xlsx', 'CB_Payroll_English.xlsx', 'data.xlsx'];
 
   // ===================
   // TTS
@@ -533,14 +559,17 @@
         const json1 = XLSX.utils.sheet_to_json(workbook.Sheets[sheet1Name]);
         flashcardData = json1.map(row => {
           const parsed = parseTopic(row['CHU_DE']);
+          const stageNum = parseInt(row['STAGE'], 10);
           return {
             topicRaw: parsed.raw, topicName: parsed.name, topicOrder: parsed.order,
+            stage: Number.isFinite(stageNum) ? stageNum : 1,
             vi: (row['DE_BAI'] ?? '').toString().trim(),
             en: (row['DAP_AN'] ?? '').toString().trim(),
             ipa: (row['IPA'] ?? '').toString().trim()
           };
         }).filter(i => i.topicName && i.vi && i.en);
 
+        renderStageChips();
         renderTopicChips();
         return;
       } catch (err) { console.log('Không đọc được file:', file, err); }
@@ -548,7 +577,38 @@
     document.getElementById('question').innerText = 'Không tìm thấy file Excel phù hợp!';
   }
 
-  function currentSourceData() { return flashcardData; }
+  function currentSourceData() { return flashcardData.filter(d => d.stage === currentStage); }
+
+  // ===================
+  // STAGE CHIPS
+  // ===================
+  function renderStageChips() {
+    const container = document.getElementById('stageChips');
+    const stages = [...new Set(flashcardData.map(d => d.stage))].sort((a, b) => a - b);
+    container.innerHTML = '';
+
+    stages.forEach(s => {
+      const chip = document.createElement('div');
+      chip.className = 'chip stage-chip' + (s === currentStage ? ' selected' : '');
+      chip.dataset.stage = s;
+      chip.innerText = `Stage ${s}`;
+      chip.addEventListener('click', () => {
+        if (currentStage === s) return;
+        currentStage = s;
+        container.querySelectorAll('.stage-chip').forEach(c => c.classList.toggle('selected', parseInt(c.dataset.stage, 10) === currentStage));
+        updateStageDesc();
+        renderTopicChips();
+      });
+      container.appendChild(chip);
+    });
+
+    updateStageDesc();
+  }
+
+  function updateStageDesc() {
+    const el = document.getElementById('stageDesc');
+    if (el) el.innerText = STAGE_TITLES[currentStage] || '';
+  }
 
   // ===================
   // TOPIC CHIPS
