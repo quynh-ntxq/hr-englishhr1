@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<title> English Coach - Luyện tiếng Anh HR/Payroll</title>
+<title>C&B English Coach - Luyện tiếng Anh HR/Payroll</title>
 <meta name="theme-color" content="#0B3D5C">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -155,6 +155,167 @@
     border-color: var(--navy);
     color:#fff;
   }
+
+  /* MODE TABS */
+  .mode-tabs{
+    display:flex;
+    gap:8px;
+    margin-bottom:16px;
+    background:#f0f1f6;
+    border-radius:14px;
+    padding:4px;
+  }
+  .mode-tab{
+    flex:1;
+    border:none;
+    background:transparent;
+    color:var(--muted);
+    font-weight:700;
+    font-size: clamp(0.8em, 2.8vw, 0.9em);
+    padding:10px 8px;
+    border-radius:10px;
+    cursor:pointer;
+    transition: all .18s ease;
+  }
+  .mode-tab.active{
+    background:#fff;
+    color:var(--navy);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  }
+
+  /* LISTENING VIEW */
+  .listen-card{
+    background: linear-gradient(160deg, #f7f8fd, #eef0fb);
+    border-radius: 18px;
+    padding: clamp(18px, 4.5vw, 28px);
+    margin-bottom: 16px;
+  }
+  .listen-title{
+    font-family:'Poppins',sans-serif;
+    font-weight:700;
+    font-size: clamp(1.05em, 4vw, 1.3em);
+    color: var(--navy);
+    margin-bottom:4px;
+  }
+  .listen-type-badge{
+    display:inline-block;
+    font-size:0.72em;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    color: var(--accent);
+    background:#e5f7f4;
+    padding:3px 10px;
+    border-radius:999px;
+    margin-bottom:12px;
+  }
+  .listen-play-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .listen-play-btn{
+    border:none;
+    background: var(--navy);
+    color:#fff;
+    font-weight:700;
+    font-size:0.85em;
+    padding:11px 16px;
+    border-radius:12px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex:1;
+    justify-content:center;
+  }
+  .listen-play-btn.secondary{
+    background:#fff;
+    color:var(--navy);
+    border:1.5px solid #dfe2f0;
+  }
+  .transcript-toggle{
+    border:none;
+    background:none;
+    color:var(--accent);
+    font-weight:700;
+    font-size:0.82em;
+    cursor:pointer;
+    padding:4px 0;
+    margin-bottom:10px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .transcript-box{
+    display:none;
+    background:#fff;
+    border-radius:14px;
+    padding:14px 16px;
+    margin-bottom:14px;
+    max-height:280px;
+    overflow-y:auto;
+  }
+  .transcript-box.show{ display:block; }
+  .transcript-line{
+    margin-bottom:10px;
+    line-height:1.5;
+  }
+  .transcript-line:last-child{ margin-bottom:0; }
+  .transcript-en{
+    font-weight:600;
+    color:var(--text);
+    font-size:0.92em;
+  }
+  .transcript-vi{
+    color:var(--muted);
+    font-size:0.85em;
+    margin-top:2px;
+  }
+  .speaker-tag{
+    display:inline-block;
+    font-size:0.72em;
+    font-weight:700;
+    color: var(--accent);
+    margin-right:6px;
+  }
+  .quiz-wrap{
+    margin-top:6px;
+  }
+  .quiz-q{
+    font-weight:700;
+    font-size:0.9em;
+    color:var(--text);
+    margin:14px 0 8px;
+  }
+  .quiz-q:first-child{ margin-top:0; }
+  .quiz-opt{
+    display:block;
+    width:100%;
+    text-align:left;
+    border:1.5px solid #e2e5f0;
+    background:#fff;
+    color:var(--text);
+    font-size:0.85em;
+    padding:10px 12px;
+    border-radius:10px;
+    margin-bottom:8px;
+    cursor:pointer;
+    transition: all .15s ease;
+  }
+  .quiz-opt.correct{
+    background:#e7f8ec;
+    border-color: var(--green);
+    color:#146c2e;
+    font-weight:700;
+  }
+  .quiz-opt.wrong{
+    background:#fdecea;
+    border-color:#e0574a;
+    color:#a02f24;
+    font-weight:700;
+  }
+  .quiz-opt:disabled{ cursor:default; }
 
   /* TOPIC CHIPS */
   .topics-wrap{
@@ -391,36 +552,65 @@
         </div>
       </div>
 
-      <div class="topics-wrap">
-        <span class="topics-label">Chọn Stage</span>
-        <div class="topic-chips" id="stageChips"></div>
-        <div class="stage-desc" id="stageDesc"></div>
+      <div class="mode-tabs">
+        <button class="mode-tab active" id="modeFlashcardBtn"><i class="fa-solid fa-layer-group"></i> Luyện câu</button>
+        <button class="mode-tab" id="modeListenBtn"><i class="fa-solid fa-headphones"></i> Đoạn nghe</button>
       </div>
 
-      <div class="topics-wrap">
-        <span class="topics-label">Chọn chủ đề</span>
-        <div class="topic-chips" id="topicChips">Đang tải dữ liệu...</div>
-      </div>
+      <div id="flashcardMode">
+        <div class="topics-wrap">
+          <span class="topics-label">Chọn Stage</span>
+          <div class="topic-chips" id="stageChips"></div>
+          <div class="stage-desc" id="stageDesc"></div>
+        </div>
 
-      <div class="stage">
-        <div class="question" id="question">Chưa có dữ liệu.</div>
-        <button class="replay-btn" id="replayBtn" title="Nghe lại"><i class="fa-solid fa-volume-high"></i></button>
-        <div class="answer-block" id="answerBlock">
-          <div class="answer" id="answer"></div>
-          <div class="ipa" id="ipa"></div>
+        <div class="topics-wrap">
+          <span class="topics-label">Chọn chủ đề</span>
+          <div class="topic-chips" id="topicChips">Đang tải dữ liệu...</div>
+        </div>
+
+        <div class="stage">
+          <div class="question" id="question">Chưa có dữ liệu.</div>
+          <button class="replay-btn" id="replayBtn" title="Nghe lại"><i class="fa-solid fa-volume-high"></i></button>
+          <div class="answer-block" id="answerBlock">
+            <div class="answer" id="answer"></div>
+            <div class="ipa" id="ipa"></div>
+          </div>
+        </div>
+
+        <div class="empty-note" id="emptyNote"></div>
+
+        <div class="progress-row">
+          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+          <div class="progress-text" id="progressText">0/0</div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" id="showAnswerBtn" disabled><i class="fa-solid fa-eye"></i> Xem đáp án</button>
+          <button class="btn btn-secondary" id="nextBtn" disabled><i class="fa-solid fa-shuffle"></i> Câu tiếp theo</button>
         </div>
       </div>
 
-      <div class="empty-note" id="emptyNote"></div>
+      <div id="listenMode" style="display:none;">
+        <div class="topics-wrap">
+          <span class="topics-label">Chọn chủ đề</span>
+          <div class="topic-chips" id="listenTopicChips">Đang tải dữ liệu...</div>
+        </div>
 
-      <div class="progress-row">
-        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-text" id="progressText">0/0</div>
-      </div>
+        <div class="listen-card" id="listenCard">
+          <div class="listen-type-badge" id="listenTypeBadge">Hội thoại</div>
+          <div class="listen-title" id="listenTitle">Chưa chọn chủ đề</div>
 
-      <div class="actions">
-        <button class="btn btn-primary" id="showAnswerBtn" disabled><i class="fa-solid fa-eye"></i> Xem đáp án</button>
-        <button class="btn btn-secondary" id="nextBtn" disabled><i class="fa-solid fa-shuffle"></i> Câu tiếp theo</button>
+          <div class="listen-play-row">
+            <button class="listen-play-btn" id="listenPlayEnBtn"><i class="fa-solid fa-play"></i> Nghe tiếng Anh</button>
+            <button class="listen-play-btn secondary" id="listenPlayViBtn"><i class="fa-solid fa-language"></i> Nghe bản dịch</button>
+          </div>
+
+          <button class="transcript-toggle" id="transcriptToggleBtn"><i class="fa-solid fa-file-lines"></i> Hiện transcript &amp; bản dịch</button>
+          <div class="transcript-box" id="transcriptBox"></div>
+
+          <div class="quiz-wrap" id="quizWrap"></div>
+        </div>
       </div>
     </div>
     <footer>C&amp;B English Coach &middot; Luyện tiếng Anh chuyên ngành HR/Payroll mỗi ngày</footer>
@@ -437,6 +627,10 @@
   let selectedTopics = new Set();
   let allSelected = true;
   let currentStage = 1;
+
+  let listeningData = [];
+  let currentListenTopic = null;
+  let listenPlayQueue = [];
 
   const STAGE_TITLES = {
     1: 'Survival English at Work',
@@ -457,7 +651,7 @@
   let pendingSpeakLang = null;
   let selectedViVoice = localStorage.getItem('cbcoach_vi_voice') || '';
   let selectedEnVoice = localStorage.getItem('cbcoach_en_voice') || '';
-  let viSpeedPreset = parseFloat(localStorage.getItem('cbcoach_vi_speed') || '1');
+  let viSpeedPreset = parseFloat(localStorage.getItem('cbcoach_vi_speed') || '1.15');
 
   const refreshVoices = () => { cachedVoices = speechSynthesis.getVoices(); populateVoiceSelectors(); };
   speechSynthesis.onvoiceschanged = refreshVoices; refreshVoices();
@@ -571,6 +765,27 @@
 
         renderStageChips();
         renderTopicChips();
+
+        if (workbook.SheetNames.includes('LISTENING')) {
+          const json2 = XLSX.utils.sheet_to_json(workbook.Sheets['LISTENING']);
+          listeningData = json2.map(row => {
+            const parsed = parseTopic(row['CHU_DE']);
+            const questions = [1, 2].map(n => ({
+              q: (row[`Q${n}`] ?? '').toString().trim(),
+              options: [row[`Q${n}_A`], row[`Q${n}_B`], row[`Q${n}_C`]].map(v => (v ?? '').toString().trim()),
+              answer: (row[`Q${n}_ANSWER`] ?? '').toString().trim().toUpperCase()
+            })).filter(qq => qq.q);
+            return {
+              topicRaw: parsed.raw, topicName: parsed.name, topicOrder: parsed.order,
+              type: (row['TYPE'] ?? '').toString().trim().toLowerCase(),
+              title: (row['TITLE'] ?? '').toString().trim(),
+              scriptEn: (row['SCRIPT_EN'] ?? '').toString(),
+              scriptVi: (row['SCRIPT_VI'] ?? '').toString(),
+              questions
+            };
+          }).filter(i => i.topicName && i.scriptEn);
+          renderListenTopicChips();
+        }
         return;
       } catch (err) { console.log('Không đọc được file:', file, err); }
     }
@@ -776,9 +991,15 @@
     });
 
     const speedBtns = document.querySelectorAll('.speed-btn');
+    let closestBtn = null, closestDiff = Infinity;
     speedBtns.forEach(btn => {
       const val = parseFloat(btn.dataset.speed);
-      btn.classList.toggle('active', val === viSpeedPreset);
+      const diff = Math.abs(val - viSpeedPreset);
+      if (diff < closestDiff) { closestDiff = diff; closestBtn = btn; }
+    });
+    speedBtns.forEach(btn => {
+      const val = parseFloat(btn.dataset.speed);
+      btn.classList.toggle('active', btn === closestBtn);
       btn.addEventListener('click', () => {
         viSpeedPreset = val;
         localStorage.setItem('cbcoach_vi_speed', String(val));
@@ -789,6 +1010,162 @@
       });
     });
   }
+
+  // ===================
+  // CHẾ ĐỘ ĐOẠN NGHE
+  // ===================
+  function getListenTopicsList() {
+    const map = new Map();
+    for (const d of listeningData) {
+      if (!map.has(d.topicName)) map.set(d.topicName, { name: d.topicName, order: d.topicOrder });
+    }
+    return Array.from(map.values()).sort((a, b) => a.order - b.order);
+  }
+
+  function renderListenTopicChips() {
+    const container = document.getElementById('listenTopicChips');
+    const topics = getListenTopicsList();
+    container.innerHTML = '';
+    topics.forEach((t, idx) => {
+      const chip = document.createElement('div');
+      chip.className = 'chip' + (idx === 0 ? ' selected' : '');
+      chip.dataset.topic = t.name;
+      const prefix = Number.isFinite(t.order) ? `${t.order}-` : '';
+      chip.innerText = prefix + t.name;
+      chip.addEventListener('click', () => {
+        container.querySelectorAll('.chip').forEach(c => c.classList.toggle('selected', c === chip));
+        selectListenTopic(t.name);
+      });
+      container.appendChild(chip);
+    });
+    if (topics.length > 0) selectListenTopic(topics[0].name);
+  }
+
+  function selectListenTopic(topicName) {
+    currentListenTopic = listeningData.find(d => d.topicName === topicName);
+    if (!currentListenTopic) return;
+
+    document.getElementById('listenTypeBadge').innerText = currentListenTopic.type === 'monologue' ? 'Đoạn văn' : 'Hội thoại';
+    document.getElementById('listenTitle').innerText = currentListenTopic.title || currentListenTopic.topicName;
+
+    document.getElementById('transcriptBox').classList.remove('show');
+    document.getElementById('transcriptToggleBtn').innerHTML = '<i class="fa-solid fa-file-lines"></i> Hiện transcript &amp; bản dịch';
+
+    renderTranscript();
+    renderQuiz();
+  }
+
+  function renderTranscript() {
+    const box = document.getElementById('transcriptBox');
+    const enLines = currentListenTopic.scriptEn.split('\n').filter(Boolean);
+    const viLines = currentListenTopic.scriptVi.split('\n').filter(Boolean);
+    box.innerHTML = '';
+    enLines.forEach((enLine, i) => {
+      const viLine = viLines[i] || '';
+      let speaker = '', enText = enLine, viText = viLine;
+      const m = enLine.match(/^([A-Z]):\s*(.*)$/);
+      const mv = viLine.match(/^([A-Z]):\s*(.*)$/);
+      if (m) { speaker = m[1]; enText = m[2]; }
+      if (mv) { viText = mv[2]; }
+
+      const row = document.createElement('div');
+      row.className = 'transcript-line';
+      row.innerHTML = `
+        <div class="transcript-en">${speaker ? `<span class="speaker-tag">${speaker}</span>` : ''}${enText}</div>
+        <div class="transcript-vi">${viText}</div>
+      `;
+      box.appendChild(row);
+    });
+  }
+
+  function stripSpeaker(line) {
+    const m = line.match(/^[A-Z]:\s*(.*)$/);
+    return m ? m[1] : line;
+  }
+
+  function speakSequential(lines, langCode) {
+    if (speechSynthesis.speaking) speechSynthesis.cancel();
+    listenPlayQueue = lines.slice();
+    playNextInQueue(langCode);
+  }
+
+  function playNextInQueue(langCode) {
+    if (listenPlayQueue.length === 0) return;
+    const text = stripSpeaker(listenPlayQueue.shift());
+    if (!text) { playNextInQueue(langCode); return; }
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = langCode;
+    u.rate = langCode === 'vi-VN' ? viSpeedPreset : 1;
+    let v = null;
+    if (langCode === 'vi-VN') v = getVoiceByName(document.getElementById('voiceViSelect')?.value) || pickVoice(langCode);
+    else v = getVoiceByName(document.getElementById('voiceEnSelect')?.value) || pickVoice(langCode);
+    if (v) u.voice = v;
+    u.onend = () => playNextInQueue(langCode);
+    speechSynthesis.speak(u);
+  }
+
+  function renderQuiz() {
+    const wrap = document.getElementById('quizWrap');
+    wrap.innerHTML = '';
+    currentListenTopic.questions.forEach((q, qi) => {
+      const qEl = document.createElement('div');
+      qEl.className = 'quiz-q';
+      qEl.innerText = `${qi + 1}. ${q.q}`;
+      wrap.appendChild(qEl);
+
+      q.options.forEach((opt, oi) => {
+        if (!opt) return;
+        const letter = String.fromCharCode(65 + oi);
+        const btn = document.createElement('button');
+        btn.className = 'quiz-opt';
+        btn.innerText = `${letter}. ${opt}`;
+        btn.addEventListener('click', () => {
+          const allOptsForQ = Array.from(wrap.children).filter(el => {
+            return el.classList.contains('quiz-opt') && el.dataset.qIndex == qi;
+          });
+          allOptsForQ.forEach(o => { o.disabled = true; });
+          if (letter === q.answer) btn.classList.add('correct');
+          else {
+            btn.classList.add('wrong');
+            allOptsForQ.forEach(o => { if (o.innerText.startsWith(q.answer + '.')) o.classList.add('correct'); });
+          }
+        });
+        btn.dataset.qIndex = qi;
+        wrap.appendChild(btn);
+      });
+    });
+  }
+
+  document.getElementById('modeFlashcardBtn').addEventListener('click', () => {
+    document.getElementById('modeFlashcardBtn').classList.add('active');
+    document.getElementById('modeListenBtn').classList.remove('active');
+    document.getElementById('flashcardMode').style.display = '';
+    document.getElementById('listenMode').style.display = 'none';
+    if (speechSynthesis.speaking) speechSynthesis.cancel();
+  });
+  document.getElementById('modeListenBtn').addEventListener('click', () => {
+    document.getElementById('modeListenBtn').classList.add('active');
+    document.getElementById('modeFlashcardBtn').classList.remove('active');
+    document.getElementById('flashcardMode').style.display = 'none';
+    document.getElementById('listenMode').style.display = '';
+    if (speechSynthesis.speaking) speechSynthesis.cancel();
+  });
+  document.getElementById('listenPlayEnBtn').addEventListener('click', () => {
+    if (!currentListenTopic) return;
+    speakSequential(currentListenTopic.scriptEn.split('\n').filter(Boolean), 'en-US');
+  });
+  document.getElementById('listenPlayViBtn').addEventListener('click', () => {
+    if (!currentListenTopic) return;
+    speakSequential(currentListenTopic.scriptVi.split('\n').filter(Boolean), 'vi-VN');
+  });
+  document.getElementById('transcriptToggleBtn').addEventListener('click', () => {
+    const box = document.getElementById('transcriptBox');
+    const btn = document.getElementById('transcriptToggleBtn');
+    box.classList.toggle('show');
+    btn.innerHTML = box.classList.contains('show')
+      ? '<i class="fa-solid fa-eye-slash"></i> Ẩn transcript'
+      : '<i class="fa-solid fa-file-lines"></i> Hiện transcript &amp; bản dịch';
+  });
 
   // ===================
   // SỰ KIỆN
