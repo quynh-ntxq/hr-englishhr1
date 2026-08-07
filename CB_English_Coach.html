@@ -508,7 +508,7 @@
     background:transparent;
     color:var(--muted);
     font-weight:700;
-    font-size:0.78em;
+    font-size: clamp(0.72em, 3vw, 0.78em);
     padding:8px 4px;
     border-radius:9px;
     cursor:pointer;
@@ -524,18 +524,22 @@
     flex:4;
     border:none;
     border-radius:12px;
-    padding:11px 8px;
+    padding:11px 6px;
     font-family:'Inter',sans-serif;
     font-weight:700;
-    font-size:0.85em;
+    font-size: clamp(0.72em, 3vw, 0.85em);
     cursor:pointer;
     background: var(--orange);
     color:#fff;
     display:flex;
     align-items:center;
     justify-content:center;
-    gap:8px;
+    gap:6px;
+    white-space:nowrap;
+    overflow:hidden;
+    transition: transform .12s ease;
   }
+  .btn-autoplay:active{ transform: scale(0.97); }
   .btn-autoplay.running{
     background:#c0392b;
   }
@@ -650,7 +654,7 @@
             <button class="auto-mode-btn active" id="autoModeReflexBtn" data-mode="reflex">Phản xạ</button>
             <button class="auto-mode-btn" id="autoModeReadBtn" data-mode="read">Đọc câu</button>
           </div>
-          <button class="btn btn-autoplay" id="autoPlayBtn"><i class="fa-solid fa-play"></i> Tự động chạy</button>
+          <button class="btn-autoplay" id="autoPlayBtn"><i class="fa-solid fa-play"></i> Tự động chạy</button>
         </div>
 
         <div class="actions">
