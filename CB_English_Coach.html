@@ -234,6 +234,14 @@
     color:var(--navy);
     border:1.5px solid #dfe2f0;
   }
+  .listen-play-btn.playing{
+    background:#c0392b;
+  }
+  .listen-play-btn.secondary.playing{
+    background:#fdecea;
+    color:#c0392b;
+    border-color:#c0392b;
+  }
   .transcript-toggle{
     border:none;
     background:none;
@@ -480,6 +488,56 @@
     text-align:right;
   }
 
+  /* AUTO PLAY */
+  .auto-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:12px;
+  }
+  .auto-mode-toggle{
+    display:flex;
+    gap:6px;
+    background:#f0f1f6;
+    border-radius:12px;
+    padding:4px;
+  }
+  .auto-mode-btn{
+    border:none;
+    background:transparent;
+    color:var(--muted);
+    font-weight:700;
+    font-size:0.78em;
+    padding:8px 12px;
+    border-radius:9px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .auto-mode-btn.active{
+    background:#fff;
+    color:var(--navy);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  .btn-autoplay{
+    flex:1;
+    border:none;
+    border-radius:12px;
+    padding:11px 10px;
+    font-family:'Inter',sans-serif;
+    font-weight:700;
+    font-size:0.85em;
+    cursor:pointer;
+    background: var(--orange);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+  }
+  .btn-autoplay.running{
+    background:#c0392b;
+  }
+
   /* ACTION BUTTONS */
   .actions{
     display:flex;
@@ -585,6 +643,14 @@
           <div class="progress-text" id="progressText">0/0</div>
         </div>
 
+        <div class="auto-row">
+          <div class="auto-mode-toggle">
+            <button class="auto-mode-btn active" id="autoModeReflexBtn" data-mode="reflex">Phản xạ</button>
+            <button class="auto-mode-btn" id="autoModeReadBtn" data-mode="read">Đọc câu</button>
+          </div>
+          <button class="btn btn-autoplay" id="autoPlayBtn"><i class="fa-solid fa-play"></i> Tự động chạy</button>
+        </div>
+
         <div class="actions">
           <button class="btn btn-primary" id="showAnswerBtn" disabled><i class="fa-solid fa-eye"></i> Xem đáp án</button>
           <button class="btn btn-secondary" id="nextBtn" disabled><i class="fa-solid fa-shuffle"></i> Câu tiếp theo</button>
@@ -631,6 +697,12 @@
   let listeningData = [];
   let currentListenTopic = null;
   let listenPlayQueue = [];
+  let listenLoopActive = false;
+  let listenLoopLang = null;
+
+  let autoPlayActive = false;
+  let autoPlayMode = 'reflex';
+  let autoPlayTimeoutId = null;
 
   const STAGE_TITLES = {
     1: 'Survival English at Work',
@@ -697,8 +769,8 @@
     fillVoiceSelect('voiceEnSelect', 'en', selectedEnVoice);
   }
 
-  function speakText(text, langCode, rate = 1) {
-    if (!text) return;
+  function speakText(text, langCode, rate = 1, onEnd = null) {
+    if (!text) { if (onEnd) onEnd(); return; }
     try {
       if (speechSynthesis.speaking) speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
@@ -708,8 +780,9 @@
       if (langCode === 'vi-VN') v = getVoiceByName(document.getElementById('voiceViSelect')?.value) || pickVoice(langCode);
       else v = getVoiceByName(document.getElementById('voiceEnSelect')?.value) || pickVoice(langCode);
       if (v) u.voice = v;
+      if (onEnd) { u.onend = onEnd; u.onerror = onEnd; }
       speechSynthesis.speak(u);
-    } catch (e) { console.warn('TTS error:', e); }
+    } catch (e) { console.warn('TTS error:', e); if (onEnd) onEnd(); }
   }
 
   const enableAutoSpeakOnce = () => {
@@ -890,6 +963,7 @@
   }
 
   function applyFilter() {
+    stopAutoPlay();
     const source = currentSourceData();
     filteredData = allSelected ? [...source] : source.filter(i => selectedTopics.has(i.topicName));
 
@@ -924,8 +998,8 @@
   // ===================
   // CÂU HỎI
   // ===================
-  function nextQuestion() {
-    if (filteredData.length === 0) return;
+  function pickNextQuestion() {
+    if (filteredData.length === 0) return null;
     if (usedIndexes.length === filteredData.length) usedIndexes = [];
 
     const available = filteredData.map((_, i) => i).filter(i => !usedIndexes.includes(i));
@@ -939,13 +1013,21 @@
     document.getElementById('answer').innerText = q.en;
 
     updateProgress(usedIndexes.length, filteredData.length);
-    document.getElementById('showAnswerBtn').disabled = false;
+    document.getElementById('showAnswerBtn').disabled = autoPlayActive ? true : false;
+
+    return q;
+  }
+
+  function nextQuestion() {
+    if (autoPlayActive) return;
+    const q = pickNextQuestion();
+    if (!q) return;
 
     if (canAutoSpeak) speakText(q.vi, 'vi-VN', viSpeedPreset);
     else { pendingSpeakText = q.vi; pendingSpeakLang = 'vi-VN'; }
   }
 
-  function showAnswer() {
+  function showAnswer(speak = true) {
     const text = document.getElementById('answer').innerText;
     document.getElementById('answerBlock').classList.add('show');
 
@@ -956,7 +1038,7 @@
       ipaEl.innerText = /^\/.*\/$/.test(t) ? t : `/${t}/`;
     } else ipaEl.innerText = '';
 
-    speakText(text, 'en-US', 1);
+    if (speak) speakText(text, 'en-US', 1);
   }
 
   function replayCurrent() {
@@ -969,6 +1051,83 @@
       speakText(q.vi, 'vi-VN', viSpeedPreset);
     }
   }
+
+  // ===================
+  // TỰ ĐỘNG CHẠY (LUYỆN CÂU)
+  // ===================
+  function updateAutoPlayBtn() {
+    const btn = document.getElementById('autoPlayBtn');
+    btn.classList.toggle('running', autoPlayActive);
+    btn.innerHTML = autoPlayActive
+      ? '<i class="fa-solid fa-stop"></i> Dừng'
+      : '<i class="fa-solid fa-play"></i> Tự động chạy';
+  }
+
+  function stopAutoPlay() {
+    if (!autoPlayActive && !autoPlayTimeoutId) return;
+    autoPlayActive = false;
+    if (autoPlayTimeoutId) { clearTimeout(autoPlayTimeoutId); autoPlayTimeoutId = null; }
+    if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
+    updateAutoPlayBtn();
+    document.getElementById('nextBtn').disabled = filteredData.length === 0;
+    document.getElementById('showAnswerBtn').disabled = currentIndex < 0;
+  }
+
+  function startAutoPlay() {
+    if (filteredData.length === 0) return;
+    autoPlayActive = true;
+    updateAutoPlayBtn();
+    document.getElementById('nextBtn').disabled = true;
+    document.getElementById('showAnswerBtn').disabled = true;
+    if (autoPlayMode === 'reflex') autoStepReflex();
+    else autoStepRead();
+  }
+
+  function autoStepReflex() {
+    if (!autoPlayActive) return;
+    const q = pickNextQuestion();
+    if (!q) { stopAutoPlay(); return; }
+    speakText(q.vi, 'vi-VN', viSpeedPreset, () => {
+      if (!autoPlayActive) return;
+      autoPlayTimeoutId = setTimeout(() => {
+        if (!autoPlayActive) return;
+        showAnswer(false);
+        autoPlayTimeoutId = setTimeout(() => {
+          if (!autoPlayActive) return;
+          autoStepReflex();
+        }, 1500);
+      }, 10000);
+    });
+  }
+
+  function autoStepRead() {
+    if (!autoPlayActive) return;
+    const q = pickNextQuestion();
+    if (!q) { stopAutoPlay(); return; }
+    showAnswer(false);
+    speakText(q.en, 'en-US', 1, () => {
+      if (!autoPlayActive) return;
+      autoStepRead();
+    });
+  }
+
+  document.getElementById('autoPlayBtn').addEventListener('click', () => {
+    if (autoPlayActive) stopAutoPlay();
+    else startAutoPlay();
+  });
+
+  document.querySelectorAll('.auto-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.auto-mode-btn').forEach(b => b.classList.toggle('active', b === btn));
+      autoPlayMode = btn.dataset.mode;
+      if (autoPlayActive) {
+        if (autoPlayTimeoutId) { clearTimeout(autoPlayTimeoutId); autoPlayTimeoutId = null; }
+        if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
+        if (autoPlayMode === 'reflex') autoStepReflex();
+        else autoStepRead();
+      }
+    });
+  });
 
   // ===================
   // CÀI ĐẶT GIỌNG ĐỌC
@@ -1045,6 +1204,8 @@
     currentListenTopic = listeningData.find(d => d.topicName === topicName);
     if (!currentListenTopic) return;
 
+    stopListenLoop();
+
     document.getElementById('listenTypeBadge').innerText = currentListenTopic.type === 'monologue' ? 'Đoạn văn' : 'Hội thoại';
     document.getElementById('listenTitle').innerText = currentListenTopic.title || currentListenTopic.topicName;
 
@@ -1083,16 +1244,43 @@
     return m ? m[1] : line;
   }
 
-  function speakSequential(lines, langCode) {
-    if (speechSynthesis.speaking) speechSynthesis.cancel();
-    listenPlayQueue = lines.slice();
-    playNextInQueue(langCode);
+  function stopListenLoop() {
+    listenLoopActive = false;
+    listenLoopLang = null;
+    listenPlayQueue = [];
+    if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
+    setPlayBtnState('listenPlayEnBtn', false, 'Nghe tiếng Anh', 'fa-play');
+    setPlayBtnState('listenPlayViBtn', false, 'Nghe bản dịch', 'fa-language');
   }
 
-  function playNextInQueue(langCode) {
-    if (listenPlayQueue.length === 0) return;
+  function setPlayBtnState(btnId, playing, label, iconClass) {
+    const btn = document.getElementById(btnId);
+    btn.classList.toggle('playing', playing);
+    btn.innerHTML = playing
+      ? '<i class="fa-solid fa-stop"></i> Dừng'
+      : `<i class="fa-solid ${iconClass}"></i> ${label}`;
+  }
+
+  function toggleLoopPlay(lines, langCode, btnId, label, iconClass) {
+    if (listenLoopActive && listenLoopLang === langCode) {
+      stopListenLoop();
+      return;
+    }
+    stopListenLoop();
+    listenLoopActive = true;
+    listenLoopLang = langCode;
+    setPlayBtnState(btnId, true, label, iconClass);
+    listenPlayQueue = lines.slice();
+    playNextInQueue(langCode, lines, btnId, label, iconClass);
+  }
+
+  function playNextInQueue(langCode, fullLines, btnId, label, iconClass) {
+    if (!listenLoopActive || listenLoopLang !== langCode) return;
+    if (listenPlayQueue.length === 0) {
+      listenPlayQueue = fullLines.slice();
+    }
     const text = stripSpeaker(listenPlayQueue.shift());
-    if (!text) { playNextInQueue(langCode); return; }
+    if (!text) { playNextInQueue(langCode, fullLines, btnId, label, iconClass); return; }
     const u = new SpeechSynthesisUtterance(text);
     u.lang = langCode;
     u.rate = langCode === 'vi-VN' ? viSpeedPreset : 1;
@@ -1100,7 +1288,11 @@
     if (langCode === 'vi-VN') v = getVoiceByName(document.getElementById('voiceViSelect')?.value) || pickVoice(langCode);
     else v = getVoiceByName(document.getElementById('voiceEnSelect')?.value) || pickVoice(langCode);
     if (v) u.voice = v;
-    u.onend = () => playNextInQueue(langCode);
+    u.onend = () => {
+      if (listenLoopActive && listenLoopLang === langCode) {
+        playNextInQueue(langCode, fullLines, btnId, label, iconClass);
+      }
+    };
     speechSynthesis.speak(u);
   }
 
@@ -1141,22 +1333,23 @@
     document.getElementById('modeListenBtn').classList.remove('active');
     document.getElementById('flashcardMode').style.display = '';
     document.getElementById('listenMode').style.display = 'none';
-    if (speechSynthesis.speaking) speechSynthesis.cancel();
+    stopListenLoop();
   });
   document.getElementById('modeListenBtn').addEventListener('click', () => {
     document.getElementById('modeListenBtn').classList.add('active');
     document.getElementById('modeFlashcardBtn').classList.remove('active');
     document.getElementById('flashcardMode').style.display = 'none';
     document.getElementById('listenMode').style.display = '';
+    stopAutoPlay();
     if (speechSynthesis.speaking) speechSynthesis.cancel();
   });
   document.getElementById('listenPlayEnBtn').addEventListener('click', () => {
     if (!currentListenTopic) return;
-    speakSequential(currentListenTopic.scriptEn.split('\n').filter(Boolean), 'en-US');
+    toggleLoopPlay(currentListenTopic.scriptEn.split('\n').filter(Boolean), 'en-US', 'listenPlayEnBtn', 'Nghe tiếng Anh', 'fa-play');
   });
   document.getElementById('listenPlayViBtn').addEventListener('click', () => {
     if (!currentListenTopic) return;
-    speakSequential(currentListenTopic.scriptVi.split('\n').filter(Boolean), 'vi-VN');
+    toggleLoopPlay(currentListenTopic.scriptVi.split('\n').filter(Boolean), 'vi-VN', 'listenPlayViBtn', 'Nghe bản dịch', 'fa-language');
   });
   document.getElementById('transcriptToggleBtn').addEventListener('click', () => {
     const box = document.getElementById('transcriptBox');
