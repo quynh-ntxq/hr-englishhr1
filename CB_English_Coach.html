@@ -427,6 +427,7 @@
     transition: transform .15s ease;
   }
   .replay-btn:active{ transform: scale(0.9); }
+  .replay-btn.muted{ background:#fdecea; color:#c0392b; }
 
   .answer-block{
     max-height:0;
@@ -636,7 +637,7 @@
 
         <div class="stage">
           <div class="question" id="question">Chưa có dữ liệu.</div>
-          <button class="replay-btn" id="replayBtn" title="Nghe lại"><i class="fa-solid fa-volume-high"></i></button>
+          <button class="replay-btn" id="replayBtn" title="Tắt/bật tiếng"><i class="fa-solid fa-volume-high"></i></button>
           <div class="answer-block" id="answerBlock">
             <div class="answer" id="answer"></div>
             <div class="ipa" id="ipa"></div>
@@ -731,6 +732,7 @@
   let selectedEnVoice = localStorage.getItem('cbcoach_en_voice') || '';
   let viSpeedPreset = parseFloat(localStorage.getItem('cbcoach_vi_speed') || '1.15');
   let enSpeedPreset = parseFloat(localStorage.getItem('cbcoach_en_speed') || '1');
+  let isMuted = localStorage.getItem('cbcoach_muted') === '1';
 
   const refreshVoices = () => { cachedVoices = speechSynthesis.getVoices(); populateVoiceSelectors(); };
   speechSynthesis.onvoiceschanged = refreshVoices; refreshVoices();
@@ -783,6 +785,7 @@
       const u = new SpeechSynthesisUtterance(text);
       u.lang = langCode;
       u.rate = rate;
+      u.volume = isMuted ? 0 : 1;
       let v = null;
       if (langCode === 'vi-VN') v = getVoiceByName(document.getElementById('voiceViSelect')?.value) || pickVoice(langCode);
       else v = getVoiceByName(document.getElementById('voiceEnSelect')?.value) || pickVoice(langCode);
@@ -1074,15 +1077,20 @@
     if (speak) speakText(text, 'en-US', enSpeedPreset);
   }
 
-  function replayCurrent() {
-    if (currentIndex < 0 || !filteredData[currentIndex]) return;
-    const q = filteredData[currentIndex];
-    const answerShown = document.getElementById('answerBlock').classList.contains('show');
-    if (answerShown) {
-      speakText(document.getElementById('answer').innerText, 'en-US', enSpeedPreset);
-    } else {
-      speakText(q.vi, 'vi-VN', viSpeedPreset);
-    }
+  function updateMuteBtn() {
+    const btn = document.getElementById('replayBtn');
+    btn.classList.toggle('muted', isMuted);
+    btn.innerHTML = isMuted
+      ? '<i class="fa-solid fa-volume-xmark"></i>'
+      : '<i class="fa-solid fa-volume-high"></i>';
+    btn.title = isMuted ? 'Đang tắt tiếng - bấm để bật lại' : 'Tắt/bật tiếng';
+  }
+
+  function toggleMute() {
+    isMuted = !isMuted;
+    localStorage.setItem('cbcoach_muted', isMuted ? '1' : '0');
+    updateMuteBtn();
+    if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
   }
 
   // ===================
@@ -1334,6 +1342,7 @@
     const u = new SpeechSynthesisUtterance(text);
     u.lang = langCode;
     u.rate = langCode === 'vi-VN' ? viSpeedPreset : enSpeedPreset;
+    u.volume = isMuted ? 0 : 1;
     let v = null;
     if (langCode === 'vi-VN') v = getVoiceByName(document.getElementById('voiceViSelect')?.value) || pickVoice(langCode);
     else v = getVoiceByName(document.getElementById('voiceEnSelect')?.value) || pickVoice(langCode);
@@ -1415,7 +1424,9 @@
   // ===================
   document.getElementById('nextBtn').addEventListener('click', nextQuestion);
   document.getElementById('showAnswerBtn').addEventListener('click', showAnswer);
-  document.getElementById('replayBtn').addEventListener('click', replayCurrent);
+  document.getElementById('replayBtn').addEventListener('click', toggleMute);
+  updateMuteBtn();
+
   initSettingsPanel();
   tryLoadExcelFiles();
 </script>
