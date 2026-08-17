@@ -1124,10 +1124,19 @@
     else autoStepRead();
   }
 
+  const REFLEX_TIMING = {
+    1: { wait: 4000, flash: 3000 },
+    2: { wait: 5000, flash: 4000 },
+    3: { wait: 6000, flash: 5000 },
+    4: { wait: 6000, flash: 6000 },
+    5: { wait: 7000, flash: 7000 },
+  };
+
   function autoStepReflex() {
     if (!autoPlayActive) return;
     const q = pickNextQuestion();
     if (!q) { stopAutoPlay(); return; }
+    const timing = REFLEX_TIMING[q.stage] || REFLEX_TIMING[1];
     speakText(q.vi, 'vi-VN', viSpeedPreset, () => {
       if (!autoPlayActive) return;
       autoPlayTimeoutId = setTimeout(() => {
@@ -1136,8 +1145,8 @@
         autoPlayTimeoutId = setTimeout(() => {
           if (!autoPlayActive) return;
           autoStepReflex();
-        }, 4000);
-      }, 6000);
+        }, timing.flash);
+      }, timing.wait);
     });
   }
 
