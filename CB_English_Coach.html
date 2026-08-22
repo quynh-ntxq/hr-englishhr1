@@ -1112,6 +1112,7 @@
     updateAutoPlayBtn();
     document.getElementById('nextBtn').disabled = filteredData.length === 0;
     document.getElementById('showAnswerBtn').disabled = currentIndex < 0;
+    updateRepeatBadge(0, 0);
   }
 
   function startAutoPlay() {
@@ -1150,18 +1151,38 @@
     });
   }
 
+  const READ_REPEAT_COUNT = 6;
+
   function autoStepRead() {
     if (!autoPlayActive) return;
     const q = pickNextQuestion();
     if (!q) { stopAutoPlay(); return; }
     showAnswer(false);
+    autoReadRepeatOnce(q, 1);
+  }
+
+  function autoReadRepeatOnce(q, repIndex) {
+    if (!autoPlayActive) return;
+    updateRepeatBadge(repIndex, READ_REPEAT_COUNT);
     speakText(q.en, 'en-US', enSpeedPreset, () => {
       if (!autoPlayActive) return;
       autoPlayTimeoutId = setTimeout(() => {
         if (!autoPlayActive) return;
-        autoStepRead();
+        if (repIndex < READ_REPEAT_COUNT) {
+          autoReadRepeatOnce(q, repIndex + 1);
+        } else {
+          updateRepeatBadge(0, 0);
+          autoStepRead();
+        }
       }, 1000);
     });
+  }
+
+  function updateRepeatBadge(current, total) {
+    const el = document.getElementById('progressText');
+    if (!el) return;
+    const base = `${usedIndexes.length}/${filteredData.length}`;
+    el.innerText = current > 0 ? `${base} · Lặp ${current}/${total}` : base;
   }
 
   document.getElementById('autoPlayBtn').addEventListener('click', () => {
