@@ -156,6 +156,47 @@
     color:#fff;
   }
 
+  .speed-value-label{
+    font-weight:700;
+    color: var(--navy);
+    margin-left:4px;
+    text-transform:none;
+  }
+  .speed-slider{
+    width:100%;
+    height:6px;
+    border-radius:999px;
+    outline:none;
+    appearance:none;
+    -webkit-appearance:none;
+    background: linear-gradient(to right, var(--navy) 0%, var(--navy) var(--fill, 50%), #e2e5f0 var(--fill, 50%), #e2e5f0 100%);
+    margin-top:8px;
+    cursor:pointer;
+  }
+  .speed-slider::-webkit-slider-thumb{
+    appearance:none;
+    -webkit-appearance:none;
+    width:20px;height:20px;
+    border-radius:50%;
+    background:#fff;
+    border:3px solid var(--navy);
+    cursor:pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  .speed-slider::-moz-range-thumb{
+    width:20px;height:20px;
+    border-radius:50%;
+    background:#fff;
+    border:3px solid var(--navy);
+    cursor:pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  .speed-slider::-moz-range-progress{
+    background: var(--navy);
+    height:6px;
+    border-radius:999px;
+  }
+
   /* MODE TABS */
   .mode-tabs{
     display:flex;
@@ -609,12 +650,8 @@
           </div>
         </div>
         <div class="settings-row">
-          <label>Tốc độ đọc tiếng Anh</label>
-          <div class="speed-options" id="enSpeedOptions">
-            <button class="speed-btn-en" data-speed="0.8">Chậm</button>
-            <button class="speed-btn-en" data-speed="1">Vừa</button>
-            <button class="speed-btn-en" data-speed="1.3">Nhanh</button>
-          </div>
+          <label>Tốc độ đọc tiếng Anh <span id="enSpeedValue" class="speed-value-label">1.0x</span></label>
+          <input type="range" id="enSpeedSlider" class="speed-slider" min="0.6" max="1" step="0.05" value="1">
         </div>
       </div>
 
@@ -1243,18 +1280,25 @@
       });
     });
 
-    const speedEnBtns = document.querySelectorAll('.speed-btn-en');
-    speedEnBtns.forEach(btn => {
-      const val = parseFloat(btn.dataset.speed);
-      btn.classList.toggle('active', val === enSpeedPreset);
-      btn.addEventListener('click', () => {
-        enSpeedPreset = val;
-        localStorage.setItem('cbcoach_en_speed', String(val));
-        speedEnBtns.forEach(b => b.classList.toggle('active', b === btn));
+    const enSlider = document.getElementById('enSpeedSlider');
+    const enValueLabel = document.getElementById('enSpeedValue');
+    enSpeedPreset = Math.min(1, Math.max(0.6, enSpeedPreset));
+    enSlider.value = enSpeedPreset;
+    enValueLabel.innerText = enSpeedPreset.toFixed(2).replace(/0$/, '') + 'x';
+    enSlider.style.setProperty('--fill', `${((enSpeedPreset - 0.6) / (1 - 0.6)) * 100}%`);
+    let enSliderDebounce = null;
+    enSlider.addEventListener('input', () => {
+      const val = parseFloat(enSlider.value);
+      enSpeedPreset = val;
+      enValueLabel.innerText = val.toFixed(2).replace(/0$/, '') + 'x';
+      enSlider.style.setProperty('--fill', `${((val - 0.6) / (1 - 0.6)) * 100}%`);
+      localStorage.setItem('cbcoach_en_speed', String(val));
+      if (enSliderDebounce) clearTimeout(enSliderDebounce);
+      enSliderDebounce = setTimeout(() => {
         if (currentIndex >= 0 && filteredData[currentIndex]) {
           speakText(filteredData[currentIndex].en, 'en-US', enSpeedPreset);
         }
-      });
+      }, 300);
     });
   }
 
