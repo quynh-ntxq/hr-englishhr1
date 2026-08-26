@@ -1179,10 +1179,19 @@
       if (!autoPlayActive) return;
       autoPlayTimeoutId = setTimeout(() => {
         if (!autoPlayActive) return;
-        showAnswer(true);
+        showAnswer(false);
+        let speechDone = false;
+        let minTimeDone = false;
+        const tryAdvance = () => {
+          if (speechDone && minTimeDone && autoPlayActive) autoStepReflex();
+        };
+        speakText(document.getElementById('answer').innerText, 'en-US', enSpeedPreset, () => {
+          speechDone = true;
+          tryAdvance();
+        });
         autoPlayTimeoutId = setTimeout(() => {
-          if (!autoPlayActive) return;
-          autoStepReflex();
+          minTimeDone = true;
+          tryAdvance();
         }, timing.flash);
       }, timing.wait);
     });
