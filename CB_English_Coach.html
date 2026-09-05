@@ -752,6 +752,7 @@
   let autoPlayActive = false;
   let autoPlayMode = 'reflex';
   let autoPlayTimeoutId = null;
+  let reflexKeepAliveId = null;
 
   const STAGE_TITLES = {
     1: 'Survival English at Work',
@@ -824,6 +825,7 @@
     if (!text) { if (onEnd) onEnd(); return; }
     try {
       if (speechSynthesis.speaking) speechSynthesis.cancel();
+      try { speechSynthesis.resume(); } catch (e) {}
       const u = new SpeechSynthesisUtterance(text);
       u.lang = langCode;
       u.rate = rate;
@@ -832,8 +834,17 @@
       if (langCode === 'vi-VN') v = getVoiceByName(document.getElementById('voiceViSelect')?.value) || pickVoice(langCode);
       else v = getVoiceByName(document.getElementById('voiceEnSelect')?.value) || pickVoice(langCode);
       if (v) u.voice = v;
+      let started = false;
+      u.onstart = () => { started = true; };
       if (onEnd) { u.onend = onEnd; u.onerror = onEnd; }
       speechSynthesis.speak(u);
+      // Safari watchdog: if speech was silently dropped after a long idle period
+      // (known WebKit bug), retry once.
+      setTimeout(() => {
+        if (!started && !speechSynthesis.speaking && !isMuted) {
+          try { speechSynthesis.resume(); speechSynthesis.speak(u); } catch (e) {}
+        }
+      }, 500);
     } catch (e) { console.warn('TTS error:', e); if (onEnd) onEnd(); }
   }
 
@@ -1142,6 +1153,7 @@
     if (!autoPlayActive && !autoPlayTimeoutId) return;
     autoPlayActive = false;
     if (autoPlayTimeoutId) { clearTimeout(autoPlayTimeoutId); autoPlayTimeoutId = null; }
+    if (reflexKeepAliveId) { clearInterval(reflexKeepAliveId); reflexKeepAliveId = null; }
     if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
     updateAutoPlayBtn();
     document.getElementById('nextBtn').disabled = filteredData.length === 0;
@@ -1174,7 +1186,16 @@
     const timing = REFLEX_TIMING[q.stage] || REFLEX_TIMING[1];
     speakText(q.vi, 'vi-VN', viSpeedPreset, () => {
       if (!autoPlayActive) return;
+      // Keep Safari's speech engine "awake" during the long silent thinking
+      // gap; WebKit can suspend it after a few seconds of idle, which
+      // silently drops the next speak() call.
+      const keepAliveId = setInterval(() => {
+        try { speechSynthesis.resume(); } catch (e) {}
+      }, 2000);
+      reflexKeepAliveId = keepAliveId;
       autoPlayTimeoutId = setTimeout(() => {
+        clearInterval(keepAliveId);
+        reflexKeepAliveId = null;
         if (!autoPlayActive) return;
         showAnswer(false);
         let speechDone = false;
