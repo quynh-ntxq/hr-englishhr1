@@ -995,8 +995,14 @@
   function renderTopicChips() {
     const container = document.getElementById('topicChips');
     const topics = getTopicsList();
-    allSelected = true;
-    selectedTopics = new Set();
+    const topicNames = new Set(topics.map(t => t.name));
+
+    if (!allSelected) {
+      // Keep the user's topic selection when switching Stage — only drop
+      // topics that genuinely don't exist for the newly selected Stage(s).
+      selectedTopics = new Set([...selectedTopics].filter(name => topicNames.has(name)));
+      if (selectedTopics.size === 0) allSelected = true;
+    }
 
     container.innerHTML = '';
 
