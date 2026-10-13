@@ -1179,12 +1179,12 @@
   }
 
   const REFLEX_TIMING = {
-    1: { wait: 4000, flash: 3000 },
-    2: { wait: 5000, flash: 4000 },
-    3: { wait: 6000, flash: 5000 },
-    4: { wait: 6000, flash: 6000 },
+    1: { wait: 7000, flash: 7000 },
+    2: { wait: 7000, flash: 7000 },
+    3: { wait: 7000, flash: 7000 },
+    4: { wait: 7000, flash: 7000 },
     5: { wait: 7000, flash: 7000 },
-    6: { wait: 8000, flash: 8000 },
+    6: { wait: 7000, flash: 7000 },
   };
 
   function autoStepReflex() {
@@ -1223,7 +1223,7 @@
     });
   }
 
-  const READ_REPEAT_COUNT = 6;
+  const READ_REPEAT_COUNT = 12;
 
   function autoStepRead() {
     if (!autoPlayActive) return;
