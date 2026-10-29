@@ -631,7 +631,7 @@
     <div class="card">
       <button class="settings-toggle" id="settingsToggle" title="Cài đặt giọng đọc"><i class="fa-solid fa-gear"></i></button>
       <div class="brand"><span class="logo-dot"></span><h1>C&amp;B ENGLISH COACH</h1></div>
-      <p class="subtitle">Luyện tiếng Anh HR - Payroll - C&amp;B mỗi ngày, đủ 5 Stage từ cơ bản đến phản xạ tự nhiên</p>
+      <p class="subtitle">Luyện tiếng Anh HR - Payroll - C&amp;B mỗi ngày, đủ 6 Stage từ cơ bản đến phản xạ tự nhiên</p>
 
       <div class="settings-panel" id="settingsPanel">
         <div class="settings-row">
@@ -823,6 +823,7 @@
     fillVoiceSelect('voiceEnSelect', 'en', selectedEnVoice);
   }
 
+  let speakToken = 0;
   function speakText(text, langCode, rate = 1, onEnd = null) {
     if (!text) { if (onEnd) onEnd(); return; }
     try {
@@ -853,11 +854,12 @@
         // chốt chặn: nếu trình duyệt không bắn onend thì vẫn đi tiếp
         failId = setTimeout(finish, 6000 + text.length * 200);
       }
+      const myToken = ++speakToken;
       speechSynthesis.speak(u);
       // Safari watchdog: if speech was silently dropped after a long idle period
       // (known WebKit bug), retry once.
       setTimeout(() => {
-        if (!started && !speechSynthesis.speaking && !isMuted) {
+        if (myToken === speakToken && !started && !speechSynthesis.speaking && !isMuted) {
           try { speechSynthesis.resume(); speechSynthesis.speak(u); } catch (e) {}
         }
       }, 500);
@@ -867,7 +869,7 @@
   const enableAutoSpeakOnce = () => {
     if (!canAutoSpeak) {
       canAutoSpeak = true;
-      if (pendingSpeakText) {
+      if (pendingSpeakText && !autoPlayActive) {
         const text = pendingSpeakText, lang = pendingSpeakLang;
         pendingSpeakText = null; pendingSpeakLang = null;
         speakText(text, lang, lang === 'vi-VN' ? viSpeedPreset : 1);
@@ -1199,6 +1201,8 @@
   function startAutoPlay() {
     if (filteredData.length === 0) return;
     autoPlayActive = true;
+    pendingSpeakText = null; pendingSpeakLang = null; // bỏ câu VN đang chờ, tránh đọc chồng
+    try { speechSynthesis.cancel(); } catch (e) {}
     updateAutoPlayBtn();
     document.getElementById('nextBtn').disabled = true;
     document.getElementById('showAnswerBtn').disabled = true;
