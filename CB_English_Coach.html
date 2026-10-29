@@ -838,7 +838,21 @@
       if (v) u.voice = v;
       let started = false;
       u.onstart = () => { started = true; };
-      if (onEnd) { u.onend = onEnd; u.onerror = onEnd; }
+      // onEnd chỉ được gọi ĐÚNG 1 LẦN (tránh chạy trùng làm đáp án bị ẩn/nhảy câu)
+      let finished = false, failId = null;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        if (failId) clearTimeout(failId);
+        if (onEnd) onEnd();
+      };
+      if (onEnd) {
+        u.onend = finish;
+        // câu bị cancel do đọc câu mới -> không tính là đọc xong
+        u.onerror = (ev) => { if (ev && (ev.error === 'canceled' || ev.error === 'interrupted')) return; finish(); };
+        // chốt chặn: nếu trình duyệt không bắn onend thì vẫn đi tiếp
+        failId = setTimeout(finish, 6000 + text.length * 200);
+      }
       speechSynthesis.speak(u);
       // Safari watchdog: if speech was silently dropped after a long idle period
       // (known WebKit bug), retry once.
@@ -1193,21 +1207,23 @@
   }
 
   const REFLEX_TIMING = {
-    1: { wait: 8000, flash: 0 },
-    2: { wait: 8000, flash: 0 },
-    3: { wait: 8000, flash: 0 },
-    4: { wait: 8000, flash: 0 },
-    5: { wait: 8000, flash: 0 },
-    6: { wait: 8000, flash: 0 },
+    1: { wait: 8000, flash: 1500 },
+    2: { wait: 8000, flash: 1500 },
+    3: { wait: 8000, flash: 1500 },
+    4: { wait: 8000, flash: 1500 },
+    5: { wait: 8000, flash: 1500 },
+    6: { wait: 8000, flash: 1500 },
   };
 
+  let reflexStepId = 0;
   function autoStepReflex() {
     if (!autoPlayActive) return;
     const q = pickNextQuestion();
     if (!q) { stopAutoPlay(); return; }
     const timing = REFLEX_TIMING[q.stage] || REFLEX_TIMING[1];
+    const myStep = ++reflexStepId;
     speakText(q.vi, 'vi-VN', viSpeedPreset, () => {
-      if (!autoPlayActive) return;
+      if (!autoPlayActive || myStep !== reflexStepId) return;
       // Keep Safari's speech engine "awake" during the long silent thinking
       // gap; WebKit can suspend it after a few seconds of idle, which
       // silently drops the next speak() call.
@@ -1218,7 +1234,7 @@
       autoPlayTimeoutId = setTimeout(() => {
         clearInterval(keepAliveId);
         reflexKeepAliveId = null;
-        if (!autoPlayActive) return;
+        if (!autoPlayActive || myStep !== reflexStepId) return;
         showAnswer(false);
         let speechDone = false;
         let minTimeDone = false;
